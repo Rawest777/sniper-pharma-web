@@ -48,12 +48,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '3178782199', 
-    'database': 'datos'
-}
+# --- CONEXIÓN A LA BASE DE DATOS (NUBE) ---
+def init_connection():
+    return mysql.connector.connect(
+        host=st.secrets["mysql"]["host"],
+        user=st.secrets["mysql"]["user"],
+        password=st.secrets["mysql"]["password"],
+        port=4000,
+        database="datos"
+    )
+
+mydb = init_connection()
 
 # -----------------------------------------------------------------------------
 # 2. ESTILO VISUAL (CSS - FILTROS, TABLA Y CALENDARIO)
@@ -621,4 +626,5 @@ def main():
                     st.warning("⚠️ No se encontraron datos en el rango de fechas seleccionado.")
 
 if __name__ == "__main__":
+
     main()
