@@ -48,15 +48,18 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CONEXIÓN A LA BASE DE DATOS (NUBE) ---
+# --- 1. CONFIGURACIÓN GLOBAL (Sin espacios a la izquierda) ---
+DB_CONFIG = {
+    "host": st.secrets["mysql"]["host"],
+    "user": st.secrets["mysql"]["user"],
+    "password": st.secrets["mysql"]["password"],
+    "port": 4000,
+    "database": "datos"
+}
+
+# --- 2. FUNCIÓN DE CONEXIÓN ---
 def init_connection():
-    return mysql.connector.connect(
-        host=st.secrets["mysql"]["host"],
-        user=st.secrets["mysql"]["user"],
-        password=st.secrets["mysql"]["password"],
-        port=4000,
-        database="datos"
-    )
+    return mysql.connector.connect(**DB_CONFIG)
 
 mydb = init_connection()
 
@@ -628,3 +631,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
