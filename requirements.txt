@@ -3,4 +3,4 @@ pandas
 mysql-connector-python
 plotly
 xlsxwriter
-numpy
+openpyxl
