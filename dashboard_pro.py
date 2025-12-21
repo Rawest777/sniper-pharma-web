@@ -25,6 +25,8 @@ backgroundColor="#F4F7FE"
 secondaryBackgroundColor="#FFFFFF"
 textColor="#2B3674"
 font="sans serif"
+[client]
+toolbarMode = "viewer"
 """
 
 write_config = True
@@ -48,7 +50,61 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 1. CONFIGURACIÓN GLOBAL (Sin espacios a la izquierda) ---
+# -----------------------------------------------------------------------------
+# ☢️ HACK NUCLEAR DE CSS (ESTE ES EL QUE FUNCIONA) ☢️
+# -----------------------------------------------------------------------------
+st.markdown("""
+    <style>
+        /* 1. ELIMINAR EL PIE DE PÁGINA ROJO Y "CREATED BY" */
+        footer {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        /* 2. ELIMINAR LA BARRA DE HERRAMIENTAS SUPERIOR Y EL MENÚ */
+        header {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        /* 3. ATAQUE ESPECÍFICO A ELEMENTOS DE STREAMLIT CLOUD */
+        [data-testid="stHeader"] {
+            display: none !important;
+        }
+        [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        
+        /* 4. ELIMINAR LA FOTO DE PERFIL (VIEWER BADGE) */
+        .viewerBadge_container__1QSob {
+            display: none !important;
+        }
+        div[class*="viewerBadge"] {
+            display: none !important;
+        }
+        
+        /* 5. ELIMINAR BOTÓN DE "MANAGE APP" */
+        .stDeployButton {
+            display: none !important;
+        }
+        
+        /* 6. ELIMINAR DECORACIÓN DE COLORES ARRIBA */
+        [data-testid="stDecoration"] {
+            display: none !important;
+        }
+
+        /* AJUSTES FINALES DE ESPACIO */
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 0rem !important;
+        }
+        
+        /* IMPORTACIÓN DE FUENTES */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    </style>
+""", unsafe_allow_html=True)
+
+# --- CONFIGURACIÓN GLOBAL RESTANTE ---
 DB_CONFIG = {
     "host": st.secrets["mysql"]["host"],
     "user": st.secrets["mysql"]["user"],
@@ -57,48 +113,23 @@ DB_CONFIG = {
     "database": "datos"
 }
 
-# --- 2. FUNCIÓN DE CONEXIÓN ---
 def init_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
 mydb = init_connection()
 
 # -----------------------------------------------------------------------------
-# 2. ESTILO VISUAL (CSS - FILTROS, TABLA Y CALENDARIO)
+# 2. ESTILO VISUAL DEL RESTO DE LA APP
 # -----------------------------------------------------------------------------
-# ☢️ HACK NUCLEAR PARA OCULTAR MARCAS DE AGUA ☢️
 st.markdown("""
     <style>
-        /* 1. Ocultar Menú Hamburguesa (3 rayitas) */
-        #MainMenu {visibility: hidden !important; display: none !important;}
-        
-        /* 2. Ocultar Footer estándar ("Made with Streamlit") */
-        footer {visibility: hidden !important; display: none !important;}
-        
-        /* 3. Ocultar Barra Superior de Colores (Header) */
-        header {visibility: hidden !important; display: none !important;}
-        [data-testid="stHeader"] {display: none !important;}
-        
-        /* 4. Ocultar Toolbar y BADGE ROJO (Hosted with Streamlit) */
-        [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
-        div[class*="viewerBadge"] {visibility: hidden !important; display: none !important;}
-        
-        /* 5. Asegurar fondo limpio */
-        .block-container { padding-top: 1rem !important; padding-bottom: 2rem !important; }
-        [data-testid="stAppViewContainer"], .stApp { background-color: #F4F7FE !important; }
-        
-        /* Estilos Generales de Fuente */
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
         :root { color-scheme: light !important; }
+        [data-testid="stAppViewContainer"], .stApp { background-color: #F4F7FE !important; }
         hr { display: none !important; border: none !important; margin: 0 !important; }
         * { font-family: 'Poppins', sans-serif; }
         h1, h2, h3, h4, h5, h6, p, li, label, span, div, .stMarkdown { color: #2B3674; }
 
-        /* =========================================================================
-           ESTILOS DE WIDGETS (Filtros, Tablas, Botones)
-           ========================================================================= */
-        
-        /* Opciones del Desplegable */
+        /* WIDGETS */
         li[role="option"] {
             white-space: normal !important;
             height: auto !important;
@@ -111,8 +142,6 @@ st.markdown("""
             display: flex !important;
             align-items: center !important;
         }
-        
-        /* Tags (Chips) */
         span[data-baseweb="tag"] {
             background-color: #E0E5F2 !important;
             border: 1px solid #d1d9e6 !important;
@@ -124,30 +153,25 @@ st.markdown("""
         span[data-baseweb="tag"] svg {
             fill: #000000 !important;
         }
-
-        /* Select Box */
         div[data-baseweb="select"] > div {
             background-color: #FFFFFF !important;
             border: 1px solid #E0E5F2 !important;
             border-radius: 10px !important;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-
-        /* Tabla */
         div[data-testid="stDataFrame"] { background-color: white !important; border: 1px solid #E0E5F2; border-radius: 10px; }
         div[data-testid="stDataFrame"] div[class*="columnHeader"] { 
             background-color: #2B3674 !important; 
             color: white !important; 
             font-weight: 900 !important;
         }
-
         div[role="menu"], div[role="dialog"], div[class*="popover"], div[role="listbox"] {
             background-color: #FFFFFF !important;
             color: #2B3674 !important;
             border: 1px solid #E0E5F2 !important;
         }
-
-        /* Calendario */
+        
+        /* CALENDARIO */
         div[data-baseweb="calendar"] div[aria-selected="true"] {
             background-color: #2B3674 !important;
         }
@@ -166,20 +190,17 @@ st.markdown("""
         .kpi-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
         .kpi-value { font-size: 26px; font-weight: 700; margin-bottom: 5px; line-height: 1.1; }
         .kpi-sub { font-size: 11px; font-weight: 500; opacity: 0.9; }
-
         .card-total { background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%) !important; } .card-total * { color: white !important; }
         .card-caro { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%) !important; } .card-caro .kpi-title, .card-caro .kpi-value, .card-caro .kpi-sub { color: #8B0000 !important; }
         .card-subir { background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%) !important; } .card-subir .kpi-title, .card-subir .kpi-value, .card-subir .kpi-sub { color: #005a3e !important; }
         .card-margen { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important; } .card-margen * { color: white !important; }
         .card-score { background: linear-gradient(135deg, #3B2667 0%, #BC78EC 100%) !important; } .card-score * { color: white !important; }
 
-        /* Botones */
+        /* BOTONES */
         div:not([data-testid="stForm"]) > div.stButton > button[kind="primary"] { background-color: #2B3674 !important; border: none !important; border-radius: 12px !important; height: 35px !important; width: 100% !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         div:not([data-testid="stForm"]) > div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-weight: 600 !important; font-size: 14px !important; }
-        
         div.stDownloadButton > button { background: linear-gradient(135deg, #34a853 0%, #2e8b57 100%) !important; border: none !important; border-radius: 12px !important; height: 35px !important; width: 100% !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         div.stDownloadButton > button p { color: #FFFFFF !important; font-size: 14px !important; font-weight: 600 !important; }
-
         [data-testid="stForm"] button { background-color: #00C853 !important; border: 1px solid #009624 !important; border-radius: 12px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         [data-testid="stForm"] button:hover { background-color: #009624 !important; transform: translateY(-2px); }
         [data-testid="stForm"] button p { color: #FFFFFF !important; font-weight: 700 !important; }
@@ -525,7 +546,7 @@ def main():
         styler.map(color_dif_styler, subset=['DIF %'])
         styler.format({"DIF %": "{:.1f}%"})
         
-        # --- CONFIGURACIÓN DE COLUMNAS (MANTENEMOS EL TOOLTIP POR SI ACASO, PERO LA NOTA ES LO QUE IMPORTA) ---
+        # --- CONFIGURACIÓN DE COLUMNAS ---
         column_cfg = {
             "PRODUCTO": st.column_config.TextColumn("Producto", width="large", help="Nombre comercial."),
             "COSTO": st.column_config.TextColumn("Costo"),
