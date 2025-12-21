@@ -9,11 +9,13 @@ import os
 import json
 import numpy as np
 from datetime import datetime, timedelta
+
 # -----------------------------------------------------------------------------
 # 0. CONFIGURACIÓN DEL TEMA
 # -----------------------------------------------------------------------------
 if not os.path.exists(".streamlit"):
     os.makedirs(".streamlit")
+
 config_path = ".streamlit/config.toml"
 config_content = """
 [theme]
@@ -23,16 +25,21 @@ backgroundColor="#F4F7FE"
 secondaryBackgroundColor="#FFFFFF"
 textColor="#2B3674"
 font="sans serif"
+[client]
+toolbarMode = "viewer"
 """
+
 write_config = True
 if os.path.exists(config_path):
     with open(config_path, "r") as f:
         if f.read().strip() == config_content.strip():
             write_config = False
+
 if write_config:
     with open(config_path, "w") as f:
         f.write(config_content)
     st.rerun()
+
 # -----------------------------------------------------------------------------
 # 1. CONFIGURACIÓN DE PÁGINA
 # -----------------------------------------------------------------------------
@@ -42,42 +49,76 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-# --- 1. CONFIGURACIÓN GLOBAL (Sin espacios a la izquierda) ---
-DB_CONFIG = {
-    "host": st.secrets["mysql"]["host"],
-    "user": st.secrets["mysql"]["user"],
-    "password": st.secrets["mysql"]["password"],
-    "port": 4000,
-    "database": "datos"
-}
-# --- 2. FUNCIÓN DE CONEXIÓN ---
-def init_connection():
-    return mysql.connector.connect(**DB_CONFIG)
-mydb = init_connection()
+
 # -----------------------------------------------------------------------------
-# 2. ESTILO VISUAL (CSS - FILTROS, TABLA Y CALENDARIO)
+# ESTILOS CSS (Limpieza Visual)
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
+        /* Ocultar elementos de marca de agua si es posible */
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        .stDeployButton {display:none;}
+        [data-testid="stDecoration"] {display:none;}
+        [data-testid="stToolbar"] {display:none;}
+        
+        /* Ajustes Generales */
+        .block-container { padding-top: 1rem; }
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-        
+    </style>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# ⚙️ CONEXIÓN INTELIGENTE (HÍBRIDA)
+# -----------------------------------------------------------------------------
+# Este bloque detecta si estamos en Railway o en Local automáticamente
+def get_db_config():
+    try:
+        # Intento 1: Buscar en st.secrets (Local / Streamlit Cloud)
+        if "mysql" in st.secrets:
+            return {
+                "host": st.secrets["mysql"]["host"],
+                "user": st.secrets["mysql"]["user"],
+                "password": st.secrets["mysql"]["password"],
+                "port": st.secrets["mysql"]["port"],
+                "database": "datos"
+            }
+    except:
+        pass
+    
+    # Intento 2: Buscar en Variables de Entorno (Railway)
+    return {
+        "host": os.environ.get("mysql_host"),
+        "user": os.environ.get("mysql_user"),
+        "password": os.environ.get("mysql_password"),
+        "port": int(os.environ.get("mysql_port", 4000)),
+        "database": "datos"
+    }
+
+DB_CONFIG = get_db_config()
+
+def init_connection():
+    # Validamos que tengamos datos antes de conectar
+    if not DB_CONFIG["host"]:
+        st.error("⚠️ Error de Configuración: No se encontraron credenciales de base de datos (Secrets o Variables).")
+        st.stop()
+    return mysql.connector.connect(**DB_CONFIG)
+
+# -----------------------------------------------------------------------------
+# 2. ESTILO VISUAL DEL RESTO DE LA APP
+# -----------------------------------------------------------------------------
+st.markdown("""
+    <style>
         :root { color-scheme: light !important; }
-        
-        header, footer, #MainMenu, [data-testid="stHeader"] { display: none !important; }
-        .block-container { padding-top: 0.5rem !important; padding-bottom: 2rem !important; }
         [data-testid="stAppViewContainer"], .stApp { background-color: #F4F7FE !important; }
-        
         hr { display: none !important; border: none !important; margin: 0 !important; }
         * { font-family: 'Poppins', sans-serif; }
         h1, h2, h3, h4, h5, h6, p, li, label, span, div, .stMarkdown { color: #2B3674; }
-        /* =========================================================================
-           1. CORRECCIÓN FILTROS (DROPDOWN Y TAGS) - ¡LO QUE PIDIÓ!
-           ========================================================================= */
-        
-        /* Opciones del Desplegable: Nombre Completo (Sin cortar) */
+
+        /* WIDGETS */
         li[role="option"] {
-            white-space: normal !important; /* Permite saltos de línea para nombres largos */
-            height: auto !important;        /* La altura se adapta al texto */
+            white-space: normal !important;
+            height: auto !important;
             min-height: 45px !important;
             padding: 10px !important;
             border-bottom: 1px solid #f0f0f0;
@@ -87,61 +128,25 @@ st.markdown("""
             display: flex !important;
             align-items: center !important;
         }
-        
-        /* Elemento Seleccionado (Chip/Tag): Gris con Letra Negra */
         span[data-baseweb="tag"] {
-            background-color: #E0E5F2 !important; /* Gris Claro */
+            background-color: #E0E5F2 !important;
             border: 1px solid #d1d9e6 !important;
         }
-        /* El texto dentro del Tag seleccionado */
         span[data-baseweb="tag"] span {
-            color: #000000 !important; /* NEGRO PURO */
+            color: #000000 !important;
             font-weight: 600 !important;
         }
-        /* La X para cerrar el tag */
-        span[data-baseweb="tag"] svg {
-            fill: #000000 !important;
-        }
-        /* Contenedor general del Select */
         div[data-baseweb="select"] > div {
             background-color: #FFFFFF !important;
             border: 1px solid #E0E5F2 !important;
             border-radius: 10px !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        /* =========================================================================
-           2. TABLA Y MENÚS
-           ========================================================================= */
         div[data-testid="stDataFrame"] { background-color: white !important; border: 1px solid #E0E5F2; border-radius: 10px; }
-        
-        /* Encabezados en Negrita Fuerte */
         div[data-testid="stDataFrame"] div[class*="columnHeader"] { 
             background-color: #2B3674 !important; 
             color: white !important; 
             font-weight: 900 !important;
         }
-        div[role="menu"], div[role="dialog"], div[class*="popover"], div[role="listbox"] {
-            background-color: #FFFFFF !important;
-            color: #2B3674 !important;
-            border: 1px solid #E0E5F2 !important;
-        }
-        /* =========================================================================
-           3. FIX CALENDARIO (TEXTO BLANCO SOBRE AZUL)
-           ========================================================================= */
-        div[data-baseweb="calendar"] div[aria-selected="true"] {
-            background-color: #2B3674 !important;
-        }
-        /* Forzar texto blanco dentro del día seleccionado */
-        div[data-baseweb="calendar"] div[aria-selected="true"] * {
-            color: #FFFFFF !important;
-            font-weight: bold !important;
-        }
-        div[data-baseweb="day"]:hover {
-            background-color: #E0E5F2 !important;
-        }
-        /* =========================================================================
-           4. BOTONES Y KPIs
-           ========================================================================= */
         
         /* KPIs */
         .kpi-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
@@ -155,28 +160,25 @@ st.markdown("""
         .card-subir { background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%) !important; } .card-subir .kpi-title, .card-subir .kpi-value, .card-subir .kpi-sub { color: #005a3e !important; }
         .card-margen { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important; } .card-margen * { color: white !important; }
         .card-score { background: linear-gradient(135deg, #3B2667 0%, #BC78EC 100%) !important; } .card-score * { color: white !important; }
-        /* Botones Azules (General) */
+
+        /* BOTONES */
         div:not([data-testid="stForm"]) > div.stButton > button[kind="primary"] { background-color: #2B3674 !important; border: none !important; border-radius: 12px !important; height: 35px !important; width: 100% !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         div:not([data-testid="stForm"]) > div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-weight: 600 !important; font-size: 14px !important; }
-        
-        /* Botones de Descarga (Verde Gradiente) */
         div.stDownloadButton > button { background: linear-gradient(135deg, #34a853 0%, #2e8b57 100%) !important; border: none !important; border-radius: 12px !important; height: 35px !important; width: 100% !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         div.stDownloadButton > button p { color: #FFFFFF !important; font-size: 14px !important; font-weight: 600 !important; }
-        /* BOTÓN GENERAR REPORTE (VERDE ESMERALDA) */
         [data-testid="stForm"] button { background-color: #00C853 !important; border: 1px solid #009624 !important; border-radius: 12px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         [data-testid="stForm"] button:hover { background-color: #009624 !important; transform: translateY(-2px); }
         [data-testid="stForm"] button p { color: #FFFFFF !important; font-weight: 700 !important; }
     </style>
 """, unsafe_allow_html=True)
+
 # -----------------------------------------------------------------------------
 # 3. MOTOR DE DATOS
 # -----------------------------------------------------------------------------
-def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
 @st.cache_data(ttl=300)
 def get_main_data():
     try:
-        conn = get_db_connection()
+        conn = init_connection()
         query = """
             SELECT id, NOMBRE, PROVEEDOR, CATEG2, Cost_prom_copifam, P_COPIFAMP,
             P_CRUZ_VERDE_Calculado, P_DROGUERIA_ALEMANA_Calculado,
@@ -189,9 +191,10 @@ def get_main_data():
     except Exception as e:
         st.error(f"Error cargando master: {e}")
         return pd.DataFrame()
+
 def get_history_data(product_id):
     try:
-        conn = get_db_connection()
+        conn = init_connection()
         query = """
             SELECT fecha_actualizacion, drogueria_nombre, precio_oferta 
             FROM precios_historicos 
@@ -204,9 +207,10 @@ def get_history_data(product_id):
     except Exception as e:
         st.error(f"Error SQL: {e}")
         return pd.DataFrame()
+
 def get_filtered_global_history(start_date, end_date):
     try:
-        conn = get_db_connection()
+        conn = init_connection()
         s_date = start_date.strftime('%Y-%m-%d 00:00:00')
         e_date = end_date.strftime('%Y-%m-%d 23:59:59')
         
@@ -223,6 +227,7 @@ def get_filtered_global_history(start_date, end_date):
     except Exception as e:
         st.error(f"Error descargando historial global: {e}")
         return pd.DataFrame()
+
 # -----------------------------------------------------------------------------
 # 4. LÓGICA DE NEGOCIO
 # -----------------------------------------------------------------------------
@@ -231,8 +236,10 @@ def process_data(df):
     
     competidores = ['P_CRUZ_VERDE_Calculado', 'P_DROGUERIA_ALEMANA_Calculado', 'P_COLSUBSIDIO_Calculado', 'P_LAREBAJA_Calculado']
     cols_numericas = competidores + ['P_COPIFAMP', 'Cost_prom_copifam']
+
     for col in cols_numericas:
         df[col] = pd.to_numeric(df[col], errors='coerce')
+
     df['Mercado_Min'] = df[competidores].min(axis=1) 
     df['GAP_Dinero'] = df['P_COPIFAMP'] - df['Mercado_Min']
     
@@ -244,16 +251,19 @@ def process_data(df):
     
     df['Alerta_Margen'] = (df['P_COPIFAMP'] - df['Cost_prom_copifam']) < 0
     return df
+
 def convert_df_to_excel(df):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Datos')
     processed_data = output.getvalue()
     return processed_data
+
 def color_dif_styler(val):
     if pd.isna(val): return ''
     color = '#D93025' if val > 0 else '#28B463' if val < 0 else '#2B3674'
     return f'color: {color}; font-weight: 800;'
+
 # -----------------------------------------------------------------------------
 # FUNCIONES GRAFICAS
 # -----------------------------------------------------------------------------
@@ -285,6 +295,7 @@ def render_html_bars(df_row):
         html += bar_html
     html += '</div>'
     return html
+
 def render_modern_line_chart(hist_df, current_price):
     colors = { 'SU EMPRESA': '#2B3674', 'La Rebaja': '#F79F1F', 'Cruz Verde': '#38ef7d', 'Drogueria Alemana': '#FF4B2B', 'Colsubsidio': '#8E2DE2' }
     
@@ -302,8 +313,10 @@ def render_modern_line_chart(hist_df, current_price):
     else:
         ts = int(pd.Timestamp.now().timestamp() * 1000)
         my_data_points.append([ts, current_price])
+
     series_data.append({"name": "SU EMPRESA", "data": my_data_points})
     colors_array = [colors['SU EMPRESA']]
+
     for vendor in unique_vendors:
         if "SU EMPRESA" in vendor.upper(): continue
         vendor_data = hist_df[hist_df['drogueria_nombre'] == vendor]
@@ -321,8 +334,10 @@ def render_modern_line_chart(hist_df, current_price):
                     c = val
                     break
             colors_array.append(c)
+
     series_json = json.dumps(series_data)
     colors_json = json.dumps(colors_array)
+
     html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -359,17 +374,21 @@ def render_modern_line_chart(hist_df, current_price):
     </html>
     """
     components.html(html_code, height=330)
+
 # -----------------------------------------------------------------------------
 # 5. DASHBOARD PRINCIPAL
 # -----------------------------------------------------------------------------
 def main():
     query_params = st.query_params
     filtro_actual = query_params.get("kpi", "TODOS")
+
     df_raw = get_main_data()
     df = process_data(df_raw)
+
     if df.empty:
         st.error("❌ Sin datos. Revisa la base de datos.")
         st.stop()
+
     # --- HEADER ---
     st.markdown("""
         <div style='display: flex; flex-direction: column; justify-content: center; height: 100%; margin-bottom: 10px;'>
@@ -379,6 +398,7 @@ def main():
             </p>
         </div>
     """, unsafe_allow_html=True)
+
     # --- KPIS ---
     n_total = len(df)
     df_altos = df[df['GAP_Dinero'] > 0]
@@ -387,6 +407,7 @@ def main():
     plata = abs(df_baratos['GAP_Dinero'].sum()) if not df_baratos.empty else 0
     n_margen = len(df[df['Alerta_Margen']])
     score = int(((n_total - n_altos) / n_total) * 100) if n_total > 0 else 0
+
     html_kpis = f"""
     <div class="kpi-container">
         <a class="kpi-card card-total" href="?kpi=TODOS" target="_self">
@@ -407,15 +428,18 @@ def main():
     </div>
     """
     st.markdown(html_kpis, unsafe_allow_html=True)
+
     # --- FILTRADO ---
     if filtro_actual == 'ALTOS': df_view = df_altos
     elif filtro_actual == 'BARATOS': df_view = df_baratos
     elif filtro_actual == 'MARGEN': df_view = df[df['Alerta_Margen']]
     elif filtro_actual == 'SCORE': df_view = df[df['GAP_Dinero'] <= 0]
     else: df_view = df
+
     # --- ORDENAMIENTO ESTRATÉGICO POR DEFECTO (ATAQUE) ---
     if not df_view.empty and 'Dif_Porcentaje' in df_view.columns:
          df_view = df_view.sort_values(by='Dif_Porcentaje', ascending=False)
+
     # FILTROS
     f1, f2, f3, f4 = st.columns([0.5, 2.2, 1.4, 1.25])
     with f1:
@@ -444,6 +468,7 @@ def main():
     with b2:
         excel_data = convert_df_to_excel(df_view)
         st.download_button(label="⇩ Descargar Excel", data=excel_data, file_name='reporte_precios.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', use_container_width=True)
+
     # --- TABLA INTERACTIVA ---
     if not df_view.empty:
         # ORDEN LÓGICO: Producto -> Costo -> Mi Precio -> DIF % -> Competencia
@@ -466,9 +491,11 @@ def main():
                 return f"${num:,.0f}".replace(",", ".")
             except:
                 return "-"
+
         cols_a_formatear = ['COSTO', 'MI PRECIO', 'ALEMANA', 'CRUZ VERDE', 'LA REBAJA', 'COLSUBSIDIO']
         for col in cols_a_formatear:
             df_table[col] = df_table[col].apply(formatear_profesional)
+
         # --- ESTILO ---
         styler = df_table.style.set_properties(**{
             'background-color': '#FFFFFF',
@@ -481,7 +508,7 @@ def main():
         styler.map(color_dif_styler, subset=['DIF %'])
         styler.format({"DIF %": "{:.1f}%"})
         
-        # --- CONFIGURACIÓN DE COLUMNAS (MANTENEMOS EL TOOLTIP POR SI ACASO, PERO LA NOTA ES LO QUE IMPORTA) ---
+        # --- CONFIGURACIÓN DE COLUMNAS ---
         column_cfg = {
             "PRODUCTO": st.column_config.TextColumn("Producto", width="large", help="Nombre comercial."),
             "COSTO": st.column_config.TextColumn("Costo"),
@@ -492,13 +519,16 @@ def main():
             "LA REBAJA": st.column_config.TextColumn("La Rebaja"),
             "COLSUBSIDIO": st.column_config.TextColumn("Colsubsidio"),
         }
+
         st.dataframe(styler, use_container_width=True, hide_index=True, column_config=column_cfg, height=500)
+
         # --- AQUÍ ESTÁ LA SOLUCIÓN "MANAGER-PROOF" ---
         st.markdown("""
         <div style="background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px; border-radius: 5px; font-size: 12px; margin-top: 10px;">
             <strong>⚠️ NOTA DEL SISTEMA:</strong> Los valores marcados con un guion <strong>(-)</strong> indican que el producto no está disponible o no fue encontrado en el catálogo del competidor en la fecha de consulta.
         </div>
         """, unsafe_allow_html=True)
+
     # --- SECCIÓN DETALLE ---
     st.markdown("<div style='margin-top: -60px;'></div>", unsafe_allow_html=True)
     
@@ -510,6 +540,7 @@ def main():
     else:
          sku = None
          st.info("No hay productos disponibles.")
+
     if sku:
         c_title, c_btn = st.columns([3, 1], gap="small")
         with c_title:
@@ -528,6 +559,7 @@ def main():
                  except: pass
                  excel_hist = convert_df_to_excel(hist_export)
                  st.download_button("⇩ Descargar Historial", data=excel_hist, file_name=f'historial_{id_producto}.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', use_container_width=True)
+
         st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
         g1, g2 = st.columns([1, 1.5], gap="medium")
         
@@ -546,6 +578,7 @@ def main():
                     st.error(f"Error procesando fechas: {e}")
             else:
                 st.info(f"Sin historial para ID {id_producto}.")
+
     # --- SECCIÓN: DESCARGA MASIVA FILTRADA ---
     st.markdown("---")
     st.markdown("<h5 style='color: #2B3674;'>📂 Exportar la historia de todos los productos</h5>", unsafe_allow_html=True)
@@ -576,6 +609,6 @@ def main():
                     )
                 else:
                     st.warning("⚠️ No se encontraron datos en el rango de fechas seleccionado.")
+
 if __name__ == "__main__":
     main()
-
