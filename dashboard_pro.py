@@ -68,11 +68,23 @@ mydb = init_connection()
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
+        /* =========================================================================
+           🛡️ HACK PROFESIONAL: OCULTAR MARCAS DE AGUA DE STREAMLIT
+           ========================================================================= */
+        #MainMenu {visibility: hidden !important;}
+        footer {visibility: hidden !important;}
+        header {visibility: hidden !important;}
+        div[data-testid="stToolbar"] {visibility: hidden !important;}
+        div[class^="viewerBadge"] {visibility: hidden !important;}
+        .stDeployButton {display:none !important;}
+        [data-testid="stHeader"] {display:none !important;}
+        
+        /* FIN DEL HACK */
+
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
         
         :root { color-scheme: light !important; }
         
-        header, footer, #MainMenu, [data-testid="stHeader"] { display: none !important; }
         .block-container { padding-top: 0.5rem !important; padding-bottom: 2rem !important; }
         [data-testid="stAppViewContainer"], .stApp { background-color: #F4F7FE !important; }
         
@@ -81,7 +93,7 @@ st.markdown("""
         h1, h2, h3, h4, h5, h6, p, li, label, span, div, .stMarkdown { color: #2B3674; }
 
         /* =========================================================================
-           1. CORRECCIÓN FILTROS (DROPDOWN Y TAGS) - ¡LO QUE PIDIÓ!
+           1. CORRECCIÓN FILTROS (DROPDOWN Y TAGS)
            ========================================================================= */
         
         /* Opciones del Desplegable: Nombre Completo (Sin cortar) */
@@ -629,6 +641,4 @@ def main():
                     st.warning("⚠️ No se encontraron datos en el rango de fechas seleccionado.")
 
 if __name__ == "__main__":
-
     main()
-
