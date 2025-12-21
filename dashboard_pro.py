@@ -66,40 +66,42 @@ mydb = init_connection()
 # -----------------------------------------------------------------------------
 # 2. ESTILO VISUAL (CSS - FILTROS, TABLA Y CALENDARIO)
 # -----------------------------------------------------------------------------
+# ☢️ HACK NUCLEAR PARA OCULTAR MARCAS DE AGUA ☢️
 st.markdown("""
     <style>
-        /* =========================================================================
-           🛡️ HACK PROFESIONAL: OCULTAR MARCAS DE AGUA DE STREAMLIT
-           ========================================================================= */
-        #MainMenu {visibility: hidden !important;}
-        footer {visibility: hidden !important;}
-        header {visibility: hidden !important;}
-        div[data-testid="stToolbar"] {visibility: hidden !important;}
-        div[class^="viewerBadge"] {visibility: hidden !important;}
-        .stDeployButton {display:none !important;}
-        [data-testid="stHeader"] {display:none !important;}
+        /* 1. Ocultar Menú Hamburguesa (3 rayitas) */
+        #MainMenu {visibility: hidden !important; display: none !important;}
         
-        /* FIN DEL HACK */
-
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        /* 2. Ocultar Footer estándar ("Made with Streamlit") */
+        footer {visibility: hidden !important; display: none !important;}
         
-        :root { color-scheme: light !important; }
+        /* 3. Ocultar Barra Superior de Colores (Header) */
+        header {visibility: hidden !important; display: none !important;}
+        [data-testid="stHeader"] {display: none !important;}
         
-        .block-container { padding-top: 0.5rem !important; padding-bottom: 2rem !important; }
+        /* 4. Ocultar Toolbar y BADGE ROJO (Hosted with Streamlit) */
+        [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+        div[class*="viewerBadge"] {visibility: hidden !important; display: none !important;}
+        
+        /* 5. Asegurar fondo limpio */
+        .block-container { padding-top: 1rem !important; padding-bottom: 2rem !important; }
         [data-testid="stAppViewContainer"], .stApp { background-color: #F4F7FE !important; }
         
+        /* Estilos Generales de Fuente */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        :root { color-scheme: light !important; }
         hr { display: none !important; border: none !important; margin: 0 !important; }
         * { font-family: 'Poppins', sans-serif; }
         h1, h2, h3, h4, h5, h6, p, li, label, span, div, .stMarkdown { color: #2B3674; }
 
         /* =========================================================================
-           1. CORRECCIÓN FILTROS (DROPDOWN Y TAGS)
+           ESTILOS DE WIDGETS (Filtros, Tablas, Botones)
            ========================================================================= */
         
-        /* Opciones del Desplegable: Nombre Completo (Sin cortar) */
+        /* Opciones del Desplegable */
         li[role="option"] {
-            white-space: normal !important; /* Permite saltos de línea para nombres largos */
-            height: auto !important;        /* La altura se adapta al texto */
+            white-space: normal !important;
+            height: auto !important;
             min-height: 45px !important;
             padding: 10px !important;
             border-bottom: 1px solid #f0f0f0;
@@ -110,22 +112,20 @@ st.markdown("""
             align-items: center !important;
         }
         
-        /* Elemento Seleccionado (Chip/Tag): Gris con Letra Negra */
+        /* Tags (Chips) */
         span[data-baseweb="tag"] {
-            background-color: #E0E5F2 !important; /* Gris Claro */
+            background-color: #E0E5F2 !important;
             border: 1px solid #d1d9e6 !important;
         }
-        /* El texto dentro del Tag seleccionado */
         span[data-baseweb="tag"] span {
-            color: #000000 !important; /* NEGRO PURO */
+            color: #000000 !important;
             font-weight: 600 !important;
         }
-        /* La X para cerrar el tag */
         span[data-baseweb="tag"] svg {
             fill: #000000 !important;
         }
 
-        /* Contenedor general del Select */
+        /* Select Box */
         div[data-baseweb="select"] > div {
             background-color: #FFFFFF !important;
             border: 1px solid #E0E5F2 !important;
@@ -133,12 +133,8 @@ st.markdown("""
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* =========================================================================
-           2. TABLA Y MENÚS
-           ========================================================================= */
+        /* Tabla */
         div[data-testid="stDataFrame"] { background-color: white !important; border: 1px solid #E0E5F2; border-radius: 10px; }
-        
-        /* Encabezados en Negrita Fuerte */
         div[data-testid="stDataFrame"] div[class*="columnHeader"] { 
             background-color: #2B3674 !important; 
             color: white !important; 
@@ -151,13 +147,10 @@ st.markdown("""
             border: 1px solid #E0E5F2 !important;
         }
 
-        /* =========================================================================
-           3. FIX CALENDARIO (TEXTO BLANCO SOBRE AZUL)
-           ========================================================================= */
+        /* Calendario */
         div[data-baseweb="calendar"] div[aria-selected="true"] {
             background-color: #2B3674 !important;
         }
-        /* Forzar texto blanco dentro del día seleccionado */
         div[data-baseweb="calendar"] div[aria-selected="true"] * {
             color: #FFFFFF !important;
             font-weight: bold !important;
@@ -166,10 +159,6 @@ st.markdown("""
             background-color: #E0E5F2 !important;
         }
 
-        /* =========================================================================
-           4. BOTONES Y KPIs
-           ========================================================================= */
-        
         /* KPIs */
         .kpi-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
         .kpi-card { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 140px; border-radius: 20px; text-decoration: none !important; transition: transform 0.2s ease; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; padding: 10px; border: none; }
@@ -184,15 +173,13 @@ st.markdown("""
         .card-margen { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important; } .card-margen * { color: white !important; }
         .card-score { background: linear-gradient(135deg, #3B2667 0%, #BC78EC 100%) !important; } .card-score * { color: white !important; }
 
-        /* Botones Azules (General) */
+        /* Botones */
         div:not([data-testid="stForm"]) > div.stButton > button[kind="primary"] { background-color: #2B3674 !important; border: none !important; border-radius: 12px !important; height: 35px !important; width: 100% !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         div:not([data-testid="stForm"]) > div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-weight: 600 !important; font-size: 14px !important; }
         
-        /* Botones de Descarga (Verde Gradiente) */
         div.stDownloadButton > button { background: linear-gradient(135deg, #34a853 0%, #2e8b57 100%) !important; border: none !important; border-radius: 12px !important; height: 35px !important; width: 100% !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         div.stDownloadButton > button p { color: #FFFFFF !important; font-size: 14px !important; font-weight: 600 !important; }
 
-        /* BOTÓN GENERAR REPORTE (VERDE ESMERALDA) */
         [data-testid="stForm"] button { background-color: #00C853 !important; border: 1px solid #009624 !important; border-radius: 12px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; }
         [data-testid="stForm"] button:hover { background-color: #009624 !important; transform: translateY(-2px); }
         [data-testid="stForm"] button p { color: #FFFFFF !important; font-weight: 700 !important; }
