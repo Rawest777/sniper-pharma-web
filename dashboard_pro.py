@@ -51,52 +51,58 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# ☢️ HACK NUCLEAR DE CSS (ESTE ES EL QUE FUNCIONA) ☢️
+# ☢️ HACK NUCLEAR DE CSS (ESTE ES EL QUE ELIMINA TODO) ☢️
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
-        /* 1. ELIMINAR EL PIE DE PÁGINA ROJO Y "CREATED BY" */
+        /* 1. ELIMINAR LA BARRA SUPERIOR COMPLETA (Donde sale el botón rojo) */
+        header {
+            visibility: hidden !important;
+            height: 0px !important;
+            padding: 0px !important;
+            margin: 0px !important;
+        }
+        
+        /* 2. ELIMINAR ESPECÍFICAMENTE EL HEADER DE STREAMLIT */
+        [data-testid="stHeader"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* 3. ELIMINAR BOTÓN DE DEPLOY (El rojo) */
+        .stDeployButton {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        /* 4. ELIMINAR BARRA DE HERRAMIENTAS Y MENÚ HAMBURGUESA */
+        [data-testid="stToolbar"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        /* 5. ELIMINAR EL PIE DE PÁGINA */
         footer {
             display: none !important;
             visibility: hidden !important;
         }
         
-        /* 2. ELIMINAR LA BARRA DE HERRAMIENTAS SUPERIOR Y EL MENÚ */
-        header {
+        /* 6. ELIMINAR DECORACIÓN DE COLORES SUPERIOR */
+        div[data-testid="stDecoration"] {
             display: none !important;
             visibility: hidden !important;
         }
-        
-        /* 3. ATAQUE ESPECÍFICO A ELEMENTOS DE STREAMLIT CLOUD */
-        [data-testid="stHeader"] {
-            display: none !important;
-        }
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
-        
-        /* 4. ELIMINAR LA FOTO DE PERFIL (VIEWER BADGE) */
-        .viewerBadge_container__1QSob {
-            display: none !important;
-        }
+
+        /* 7. ELIMINAR LA FOTO DE PERFIL (VIEWER BADGE) */
         div[class*="viewerBadge"] {
             display: none !important;
         }
-        
-        /* 5. ELIMINAR BOTÓN DE "MANAGE APP" */
-        .stDeployButton {
-            display: none !important;
-        }
-        
-        /* 6. ELIMINAR DECORACIÓN DE COLORES ARRIBA */
-        [data-testid="stDecoration"] {
-            display: none !important;
-        }
 
-        /* AJUSTES FINALES DE ESPACIO */
+        /* 8. SUBIR TODO EL CONTENIDO PARA QUE NO QUEDE HUECO BLANCO ARRIBA */
         .block-container {
-            padding-top: 1rem !important;
+            padding-top: 0rem !important;
             padding-bottom: 0rem !important;
+            margin-top: -50px !important; /* Forzamos subida */
         }
         
         /* IMPORTACIÓN DE FUENTES */
@@ -104,7 +110,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN GLOBAL RESTANTE ---
+# --- CONFIGURACIÓN DE BASE DE DATOS ---
 DB_CONFIG = {
     "host": st.secrets["mysql"]["host"],
     "user": st.secrets["mysql"]["user"],
