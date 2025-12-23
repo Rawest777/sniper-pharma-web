@@ -50,6 +50,61 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# =============================================================================
+# 🔒 SISTEMA DE SEGURIDAD SNIPER (CANDADO)
+# =============================================================================
+def check_password():
+    """Retorna True si el usuario ingresó la clave correcta."""
+    def password_entered():
+        """Verifica si la clave coincide con la maestra."""
+        if st.session_state["password"] == "sniper2025": # <--- TU CLAVE MAESTRA
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Borra la clave por seguridad
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # Primera vez, muestra el login
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #2B3674;'>🦅 Sniper Pharma | Acceso Privado</h2>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.text_input(
+                "🔑 Ingrese su Licencia de Acceso:", 
+                type="password", 
+                on_change=password_entered, 
+                key="password",
+                placeholder="Escriba su clave aquí..."
+            )
+            st.warning("⚠️ Acceso Flash: Su licencia temporal expira en 24 horas.")
+            st.info("Para solicitar un DEMO, contacte a soporte en WhatsApp.")
+        return False
+        
+    elif not st.session_state["password_correct"]:
+        # Clave mal
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #2B3674;'>🦅 Sniper Pharma | Acceso Privado</h2>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.text_input(
+                "🔑 Ingrese su Licencia de Acceso:", 
+                type="password", 
+                on_change=password_entered, 
+                key="password",
+                placeholder="Escriba su clave aquí..."
+            )
+            st.error("❌ Licencia incorrecta o expirada.")
+        return False
+        
+    else:
+        # Clave bien
+        return True
+
+if not check_password():
+    st.stop() # 🛑 DETIENE TODA LA APP AQUÍ SI NO HAY CLAVE
+# =============================================================================
+
+
 # -----------------------------------------------------------------------------
 # ESTILOS CSS (Limpieza Visual)
 # -----------------------------------------------------------------------------
