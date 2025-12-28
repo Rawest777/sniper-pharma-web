@@ -51,57 +51,76 @@ st.set_page_config(
 )
 
 # =============================================================================
-# 🔒 SISTEMA DE SEGURIDAD SNIPER (CANDADO)
+# 🔒 SISTEMA DE SEGURIDAD SNIPER (CON VENCIMIENTO Y ROLES)
 # =============================================================================
+
+# BASE DE DATOS DE USUARIOS (Tú controlas esto manualmente aquí)
+# Formato: "usuario": {"pass": "clave", "role": "tipo", "expires": "YYYY-MM-DD"}
+USERS_DB = {
+    # 1. USUARIO DEMO (Para el gancho de WhatsApp - Vence pronto)
+    "demo": {
+        "pass": "flash2025", 
+        "role": "demo", 
+        "expires": "2025-12-30" # <--- FECHA DE CORTE (MAÑANA/PASADO)
+    },
+    # 2. USUARIO CLIENTE (Ejemplo de alguien que pagó)
+    "farmacia_vip": {
+        "pass": "cliente80k", 
+        "role": "pro", 
+        "expires": "2026-01-30" 
+    },
+    # 3. ADMIN (Tú - Acceso total ilimitado)
+    "admin": {
+        "pass": "sniper2025", 
+        "role": "admin", 
+        "expires": "2099-12-31" 
+    }
+}
+
 def check_password():
-    """Retorna True si el usuario ingresó la clave correcta."""
+    """Retorna True si el usuario ingresa credenciales válidas y vigentes."""
+    
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
+
     def password_entered():
-        """Verifica si la clave coincide con la maestra."""
-        if st.session_state["password"] == "sniper2025": # <--- TU CLAVE MAESTRA
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Borra la clave por seguridad
+        entered_user = st.session_state.get("username_input", "").strip()
+        entered_pass = st.session_state.get("password_input", "").strip()
+        
+        if entered_user in USERS_DB:
+            user_data = USERS_DB[entered_user]
+            if user_data["pass"] == entered_pass:
+                # Verificar si la licencia venció
+                expire_date = datetime.strptime(user_data["expires"], "%Y-%m-%d")
+                if datetime.now() > expire_date:
+                    st.error("🚫 SU LICENCIA HA EXPIRADO. Contacte a soporte para renovar.")
+                    st.session_state["password_correct"] = False
+                else:
+                    st.session_state["password_correct"] = True
+                    st.session_state["user_role"] = user_data["role"]
+                    st.session_state["user_name"] = entered_user
+            else:
+                st.session_state["password_correct"] = False
+                st.error("❌ Clave incorrecta")
         else:
             st.session_state["password_correct"] = False
+            st.error("❌ Usuario no encontrado")
 
-    if "password_correct" not in st.session_state:
-        # Primera vez, muestra el login
+    if not st.session_state["password_correct"]:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h2 style='text-align: center; color: #2B3674;'>🦅 Sniper Pharma | Acceso Privado</h2>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.text_input(
-                "🔑 Ingrese su Licencia de Acceso:", 
-                type="password", 
-                on_change=password_entered, 
-                key="password",
-                placeholder="Escriba su clave aquí..."
-            )
-            st.warning("⚠️ Acceso Flash: Su licencia temporal expira en 24 horas.")
-            st.info("Para solicitar un DEMO, contacte a soporte en WhatsApp.")
-        return False
+        st.markdown("<h2 style='text-align: center; color: #2B3674;'>🦅 Sniper Pharma | Acceso Seguro</h2>", unsafe_allow_html=True)
         
-    elif not st.session_state["password_correct"]:
-        # Clave mal
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h2 style='text-align: center; color: #2B3674;'>🦅 Sniper Pharma | Acceso Privado</h2>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.text_input(
-                "🔑 Ingrese su Licencia de Acceso:", 
-                type="password", 
-                on_change=password_entered, 
-                key="password",
-                placeholder="Escriba su clave aquí..."
-            )
-            st.error("❌ Licencia incorrecta o expirada.")
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c2:
+            st.text_input("👤 Usuario:", key="username_input")
+            st.text_input("🔑 Clave:", type="password", key="password_input", on_change=password_entered)
+            st.info("ℹ️ Para solicitar un DEMO, escriba al WhatsApp.")
         return False
-        
     else:
-        # Clave bien
         return True
 
 if not check_password():
-    st.stop() # 🛑 DETIENE TODA LA APP AQUÍ SI NO HAY CLAVE
+    st.stop() 
 # =============================================================================
 
 
@@ -439,6 +458,24 @@ def main():
 
     df_raw = get_main_data()
     df = process_data(df_raw)
+
+    # -------------------------------------------------------------
+    # 🔒 LÓGICA DE CENSURA (MODO DEMO)
+    # -------------------------------------------------------------
+    user_role = st.session_state.get("user_role", "demo")
+    
+    if user_role == "demo":
+        # Mensaje de Venta Constante
+        st.warning("👀 ESTÁS EN MODO DEMO: Viendo precios reales de mercado (Cruz Verde, Rebaja, etc). Tus costos y márgenes aparecen en $0. 🔓 Para activar tu rentabilidad, adquiere la licencia PRO.")
+        
+        # Enmascaramos TUS datos (Visualmente se vuelven 0)
+        # NOTA: No borramos nada de la BD, solo lo ocultamos en esta sesión.
+        if not df.empty:
+            df['P_COPIFAMP'] = 0        # Tu Precio -> 0
+            df['Cost_prom_copifam'] = 0 # Tu Costo -> 0
+            df['GAP_Dinero'] = 0        # Ganancia -> 0
+            df['Dif_Porcentaje'] = 0    # Diferencia % -> 0
+            df['Alerta_Margen'] = False
 
     if df.empty:
         st.error("❌ Sin datos. Revisa la base de datos.")
