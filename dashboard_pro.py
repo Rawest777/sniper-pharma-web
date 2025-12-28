@@ -383,10 +383,13 @@ def render_modern_line_chart(hist_df, current_price):
     if all_dates:
         for d in all_dates:
             ts = int(d.timestamp() * 1000)
-            my_data_points.append([ts, current_price])
+            # FIX: Convertir explícitamente a float para evitar error int64 de numpy
+            val = float(current_price) if current_price else 0.0
+            my_data_points.append([ts, val])
     else:
         ts = int(pd.Timestamp.now().timestamp() * 1000)
-        my_data_points.append([ts, current_price])
+        val = float(current_price) if current_price else 0.0
+        my_data_points.append([ts, val])
 
     series_data.append({"name": "SU EMPRESA", "data": my_data_points})
     colors_array = [colors['SU EMPRESA']]
@@ -398,7 +401,9 @@ def render_modern_line_chart(hist_df, current_price):
         for _, row in vendor_data.iterrows():
             if pd.notnull(row['fecha']) and pd.notnull(row['precio']):
                 ts = int(row['fecha'].timestamp() * 1000)
-                data_points.append([ts, row['precio']])
+                # FIX: Convertir explícitamente a float
+                price_val = float(row['precio'])
+                data_points.append([ts, price_val])
         
         if data_points:
             series_data.append({"name": vendor, "data": data_points})
