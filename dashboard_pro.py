@@ -61,7 +61,7 @@ USERS_DB = {
     "demo": {
         "pass": "flash2025", 
         "role": "demo", 
-        "expires": "2025-01-05" # <--- FECHA DE CORTE (MAÑANA/PASADO)
+        "expires": "2026-01-05" # <--- FECHA DE CORTE (MAÑANA/PASADO)
     },
     # 2. USUARIO CLIENTE (Ejemplo de alguien que pagó)
     "farmacia_vip": {
@@ -709,4 +709,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
