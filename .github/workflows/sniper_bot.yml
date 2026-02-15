@@ -19,7 +19,7 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install mysql-connector-python requests beautifulsoup4
+          pip install mysql-connector-python requests beautifulsoup4 selenium selenium-stealth webdriver-manager pandas
 
       - name: Ejecutar Inteligencia de Precios
         env:
@@ -31,3 +31,4 @@ jobs:
           python scraper_colsubsidio.py
           python scraper_larebaja.py
           python scraper_alemana.py
+          python scraper_cruzverde.py
