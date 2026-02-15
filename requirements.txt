@@ -1,6 +1,9 @@
-streamlit
-pandas
 mysql-connector-python
+requests
+beautifulsoup4
+pandas
+streamlit
 plotly
-xlsxwriter
-openpyxl
+selenium
+selenium-stealth
+webdriver-manager
