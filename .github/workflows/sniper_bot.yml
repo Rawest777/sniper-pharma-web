@@ -1,0 +1,33 @@
+name: Sniper Pharma Automation
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # Ejecuta a las 5:00 AM hora Colombia
+  workflow_dispatch: # Botón para disparar manualmente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalar dependencias
+        run: |
+          pip install mysql-connector-python requests beautifulsoup4
+
+      - name: Ejecutar Inteligencia de Precios
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+        run: |
+          python scraper_colsubsidio.py
+          python scraper_larebaja.py
+          python scraper_alemana.py
